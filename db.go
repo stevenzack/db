@@ -124,3 +124,9 @@ func (cmd *Cmd) Scan(i interface{}) error {
 	e := json.Unmarshal(cmd.resultData, i)
 	return e
 }
+func (cmd *Cmd) Default(s string) string {
+	if cmd.resultErr != nil || string(cmd.resultData) == "" {
+		return s
+	}
+	return string(cmd.resultData)
+}
