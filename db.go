@@ -130,3 +130,9 @@ func (cmd *Cmd) Default(s string) string {
 	}
 	return string(cmd.resultData)
 }
+func (cmd *Cmd) Val() string {
+	return string(cmd.resultData)
+}
+func (cmd *Cmd) Err() error {
+	return cmd.resultErr
+}
