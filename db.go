@@ -71,9 +71,15 @@ func Get(s string) *Cmd {
 	return cmd
 }
 func Set(key string, data interface{}) error {
-	value, e := json.Marshal(data)
-	if e != nil {
-		return e
+	var value []byte
+	if v, ok := data.(string); ok {
+		value = []byte(v)
+	} else {
+		var e error
+		value, e = json.Marshal(data)
+		if e != nil {
+			return e
+		}
 	}
 	path := dbDir + key
 	fi, e := os.Stat(path)
