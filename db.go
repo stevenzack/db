@@ -105,7 +105,7 @@ func SetSecret(key string, value string) error {
 	if data == nil {
 		return Set(key, "")
 	}
-	return Set(key, cryptoToolkit.Encrypt(data, password))
+	return Set(key, string(cryptoToolkit.Encrypt(data, password)))
 }
 func GetSecret(key string) string {
 	data := Get(key).resultData
