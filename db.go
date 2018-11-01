@@ -3,12 +3,13 @@ package db
 import (
 	"encoding/json"
 	"errors"
+	"github.com/StevenZack/tools/cryptoToolkit"
 	"io/ioutil"
 	"os"
 )
 
 var (
-	dbDir string
+	dbDir, password string
 )
 
 type Cmd struct {
@@ -17,7 +18,12 @@ type Cmd struct {
 	resultErr  error
 }
 
-func InitDB(dir string) error {
+func InitDB(dir string, pw string) error {
+	if pw == "" {
+		password = "StevenZack/db"
+	} else {
+		password = pw
+	}
 	fi, e := os.Stat(dir)
 	if e != nil {
 		if os.IsNotExist(e) {
@@ -93,6 +99,12 @@ func Set(key string, data interface{}) error {
 		return errors.New("db.Set() : " + path + " is a dir")
 	}
 	return writeFileBytes(path, value)
+}
+func SetSecret(key string, value string) error {
+	return Set(key, cryptoToolkit.Encrypt([]byte(value), password))
+}
+func GetSecret(key string) string {
+	return string(cryptoToolkit.Decrypt([]byte(Get(key).Val()), password))
 }
 func getDirOfFilePath(path string) (string, error) {
 	sep := string(os.PathSeparator)
