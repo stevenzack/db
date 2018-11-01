@@ -101,10 +101,18 @@ func Set(key string, data interface{}) error {
 	return writeFileBytes(path, value)
 }
 func SetSecret(key string, value string) error {
-	return Set(key, cryptoToolkit.Encrypt([]byte(value), password))
+	data := []byte(value)
+	if data == nil {
+		return Set(key, "")
+	}
+	return Set(key, cryptoToolkit.Encrypt(data, password))
 }
 func GetSecret(key string) string {
-	return string(cryptoToolkit.Decrypt([]byte(Get(key).Val()), password))
+	data := Get(key).resultData
+	if data == nil {
+		return ""
+	}
+	return string(cryptoToolkit.Decrypt(data, password))
 }
 func getDirOfFilePath(path string) (string, error) {
 	sep := string(os.PathSeparator)
