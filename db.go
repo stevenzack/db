@@ -112,7 +112,12 @@ func GetSecret(key string) string {
 	if data == nil {
 		return ""
 	}
-	return string(cryptoToolkit.Decrypt(data, password))
+	value, e := cryptoToolkit.Decrypt(data, password)
+	if e != nil {
+		os.Remove(dbDir + key)
+		return ""
+	}
+	return string(value)
 }
 func getDirOfFilePath(path string) (string, error) {
 	sep := string(os.PathSeparator)
