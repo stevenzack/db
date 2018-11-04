@@ -6,6 +6,7 @@ import (
 	"github.com/StevenZack/tools/cryptoToolkit"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 var (
@@ -42,13 +43,15 @@ func InitDB(dir string, pw string) error {
 	dbDir = getrpath(dir)
 	return nil
 }
-func getrpath(s string) string {
+func getrpath(p string) string {
+	s := strings.Replace(p, "/", string(os.PathSeparator), -1)
 	if len(s) < 1 || s[len(s)-1:] == string(os.PathSeparator) {
 		return s
 	}
 	return s + string(os.PathSeparator)
 }
-func Get(s string) *Cmd {
+func Get(key string) *Cmd {
+	s := strings.Replace(key, "/", string(os.PathSeparator), -1)
 	cmd := &Cmd{}
 	cmd.path = dbDir + s
 	fi, e := os.Stat(cmd.path)
@@ -77,6 +80,7 @@ func Get(s string) *Cmd {
 	return cmd
 }
 func Set(key string, data interface{}) error {
+	s := strings.Replace(key, "/", string(os.PathSeparator), -1)
 	var value []byte
 	if v, ok := data.(string); ok {
 		value = []byte(v)
@@ -87,7 +91,7 @@ func Set(key string, data interface{}) error {
 			return e
 		}
 	}
-	path := dbDir + key
+	path := dbDir + s
 	fi, e := os.Stat(path)
 	if e != nil {
 		if os.IsNotExist(e) {
