@@ -11,7 +11,14 @@ func (db *DB) String(k, def string) *livedata.LiveDataString {
 	if v == "" {
 		v = def
 	}
-	return livedata.NewLiveDataString(v)
+	l := livedata.NewLiveDataString(v)
+	l.ObserveForever(func(s string) {
+		if l.Get() == s {
+			return
+		}
+		db.SetVar(k, s)
+	})
+	return l
 }
 
 func (db *DB) Int(k string, def int) *livedata.LiveDataInt {
@@ -27,7 +34,14 @@ func (db *DB) Int(k string, def int) *livedata.LiveDataInt {
 			i = def
 		}
 	}
-	return livedata.NewLiveDataInt(i)
+	l := livedata.NewLiveDataInt(i)
+	l.ObserveForever(func(v int) {
+		if v == l.Get() {
+			return
+		}
+		db.SetVar(k, strconv.FormatInt(int64(v), 10))
+	})
+	return l
 }
 
 func (db *DB) Bool(k string, def bool) *livedata.LiveDataBool {
@@ -43,5 +57,12 @@ func (db *DB) Bool(k string, def bool) *livedata.LiveDataBool {
 			b = def
 		}
 	}
-	return livedata.NewLiveDataBool(b)
+	l := livedata.NewLiveDataBool(b)
+	l.ObserveForever(func(v bool) {
+		if v == l.Get() {
+			return
+		}
+		db.SetVar(k, strconv.FormatBool(v))
+	})
+	return l
 }
