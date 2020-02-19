@@ -1,174 +1,84 @@
 package db
 
 import (
-	"encoding/json"
-	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
-	"strings"
 
 	"github.com/StevenZack/tools/cryptoToolkit"
+
+	"github.com/StevenZack/tools/fileToolkit"
+
+	"github.com/StevenZack/tools/strToolkit"
 )
 
-var (
-	dbDir, password string
-)
-
-type Cmd struct {
-	path       string
-	resultData []byte
-	resultErr  error
+type DB struct {
+	dir    string
+	cypher string
 }
 
-func InitDB(dir string, pw string) error {
-	if pw == "" {
-		password = "StevenZack/db"
-	} else {
-		password = pw
-	}
-	fi, e := os.Stat(dir)
+func NewDB(dir, cypher string) (*DB, error) {
+	e := os.MkdirAll(dir, 0755)
 	if e != nil {
-		if os.IsNotExist(e) {
-			e = os.MkdirAll(dir, 0755)
-			if e != nil {
-				return e
-			}
-			dbDir = getrpath(dir)
-			return nil
-		}
-		return e
+		return nil, e
 	}
-	if !fi.IsDir() {
-		return errors.New("db : initDB() " + dir + " is not a dir ")
-	}
-	dbDir = getrpath(dir)
-	return nil
+	return &DB{
+		dir:    strToolkit.Getrpath(dir),
+		cypher: cypher,
+	}, nil
 }
-func getrpath(p string) string {
-	s := strings.Replace(p, "/", string(os.PathSeparator), -1)
-	if len(s) < 1 || s[len(s)-1:] == string(os.PathSeparator) {
-		return s
-	}
-	return s + string(os.PathSeparator)
-}
-func Get(key string) *Cmd {
-	s := strings.Replace(key, "/", string(os.PathSeparator), -1)
-	cmd := &Cmd{}
-	cmd.path = dbDir + s
-	fi, e := os.Stat(cmd.path)
+
+func MustNewDB(dir, cypher string) *DB {
+	db, e := NewDB(dir, cypher)
 	if e != nil {
-		if os.IsNotExist(e) {
-			return cmd
-		}
-		cmd.resultErr = e
-		return cmd
+		log.Fatal(e)
 	}
-	if fi.IsDir() {
-		cmd.resultErr = errors.New("db.Get() : " + cmd.path + "is dir")
-		return cmd
-	}
-	f, e := os.OpenFile(cmd.path, os.O_RDONLY, 0644)
-	if e != nil {
-		cmd.resultErr = e
-		return cmd
-	}
-	defer f.Close()
-	cmd.resultData, e = ioutil.ReadAll(f)
-	if e != nil {
-		cmd.resultErr = e
-		return cmd
-	}
-	return cmd
+	return db
 }
-func Set(key string, data interface{}) error {
-	s := strings.Replace(key, "/", string(os.PathSeparator), -1)
-	var value []byte
-	if v, ok := data.(string); ok {
-		value = []byte(v)
-	} else {
-		var e error
-		value, e = json.Marshal(data)
-		if e != nil {
-			return e
-		}
-	}
-	path := dbDir + s
-	fi, e := os.Stat(path)
+
+func (d *DB) SetVar(k, v string) {
+	path := d.dir + k
+	fileToolkit.TruncateFile(path)
+	f, e := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if e != nil {
-		if os.IsNotExist(e) {
-			return writeFileBytes(path, value)
-		}
-		return e
+		fmt.Println("open file error :", e)
+		return
 	}
-	if fi.IsDir() {
-		return errors.New("db.Set() : " + path + " is a dir")
-	}
-	return writeFileBytes(path, value)
+	f.WriteString(v)
+	f.Close()
 }
-func SetSecret(key string, value string) error {
-	data := []byte(value)
-	if data == nil {
-		return Set(key, "")
-	}
-	return Set(key, string(cryptoToolkit.Encrypt(data, password)))
-}
-func GetSecret(key string) string {
-	data := Get(key).resultData
-	if data == nil {
+
+func (d *DB) GetVar(k string) string {
+	path := d.dir + k
+	f, e := os.OpenFile(path, os.O_RDONLY, 0644)
+	if e != nil {
 		return ""
 	}
-	value, e := cryptoToolkit.Decrypt(data, password)
+	defer f.Close()
+	b, e := ioutil.ReadAll(f)
 	if e != nil {
-		os.Remove(dbDir + key)
+		fmt.Println("read file error :", e)
 		return ""
 	}
-	return string(value)
+	return string(b)
 }
-func getDirOfFilePath(path string) (string, error) {
-	sep := string(os.PathSeparator)
-	if path[len(path)-1:] == sep {
-		return "", errors.New("db.getDirOfFilePath(" + path + ") failed : path end with / (or \\)")
-	}
-	for i := len(path) - 1; i > -1; i-- {
-		if path[i:i+1] == sep {
-			return path[:i+1], nil
-		}
-	}
-	return "", errors.New("db.getDirOfFilePath(" + path + ") failed : path incorrect")
+
+func (d *DB) SetSecret(k, v string) {
+	b := cryptoToolkit.EncryptStr(v, d.cypher)
+	d.SetVar(k, string(b))
 }
-func writeFileBytes(path string, value []byte) error {
-	dir, e := getDirOfFilePath(path)
+
+func (d *DB) GetSecret(k string) string {
+	enc := d.GetVar(k)
+	if enc == "" {
+		return ""
+	}
+	dec, e := cryptoToolkit.DecryptStr(enc, d.cypher)
 	if e != nil {
-		return e
+		fmt.Println("decrypt str error :", e)
+		d.SetVar(k, "")
+		return ""
 	}
-	e = os.MkdirAll(dir, 0755)
-	if e != nil {
-		return e
-	}
-	f, e := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	if e != nil {
-		return e
-	}
-	defer f.Close()
-	_, e = f.Write(value)
-	return e
-}
-func (cmd *Cmd) Scan(i interface{}) error {
-	if cmd.resultErr != nil {
-		return cmd.resultErr
-	}
-	e := json.Unmarshal(cmd.resultData, i)
-	return e
-}
-func (cmd *Cmd) Default(s string) string {
-	if cmd.resultErr != nil || string(cmd.resultData) == "" {
-		return s
-	}
-	return string(cmd.resultData)
-}
-func (cmd *Cmd) Val() string {
-	return string(cmd.resultData)
-}
-func (cmd *Cmd) Err() error {
-	return cmd.resultErr
+	return dec
 }

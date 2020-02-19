@@ -4,8 +4,8 @@ import (
 	"github.com/StevenZack/livedata"
 )
 
-func String(s string) *livedata.LiveDataString {
-	return livedata.NewLiveDataString(s)
+func String(k, v string) *livedata.LiveDataString {
+	return livedata.NewLiveDataString(v)
 }
 
 func Int(i int) *livedata.LiveDataInt {
