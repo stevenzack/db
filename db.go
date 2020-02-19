@@ -3,10 +3,11 @@ package db
 import (
 	"encoding/json"
 	"errors"
-	"github.com/StevenZack/tools/cryptoToolkit"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/StevenZack/tools/cryptoToolkit"
 )
 
 var (
