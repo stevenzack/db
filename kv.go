@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/StevenZack/livedata"
@@ -13,7 +14,8 @@ func (db *DB) String(k, def string) *livedata.LiveDataString {
 	}
 	l := livedata.NewLiveDataString(v)
 	l.ObserveForever(func(s string) {
-		if l.Get() == s {
+		fmt.Println("onChange", s)
+		if db.GetVar(k) == s {
 			return
 		}
 		db.SetVar(k, s)
@@ -36,7 +38,7 @@ func (db *DB) Int(k string, def int) *livedata.LiveDataInt {
 	}
 	l := livedata.NewLiveDataInt(i)
 	l.ObserveForever(func(v int) {
-		if v == l.Get() {
+		if strconv.Itoa(v) == db.GetVar(k) {
 			return
 		}
 		db.SetVar(k, strconv.FormatInt(int64(v), 10))
@@ -59,7 +61,7 @@ func (db *DB) Bool(k string, def bool) *livedata.LiveDataBool {
 	}
 	l := livedata.NewLiveDataBool(b)
 	l.ObserveForever(func(v bool) {
-		if v == l.Get() {
+		if strconv.FormatBool(v) == db.GetVar(k) {
 			return
 		}
 		db.SetVar(k, strconv.FormatBool(v))

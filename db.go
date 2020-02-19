@@ -38,6 +38,7 @@ func MustNewDB(dir, cypher string) *DB {
 }
 
 func (d *DB) SetVar(k, v string) {
+	fmt.Println("setvar ", k, v)
 	path := d.dir + k
 	fileToolkit.TruncateFile(path)
 	f, e := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
