@@ -16,6 +16,7 @@ import (
 type DB struct {
 	dir    string
 	cypher string
+	log    bool
 }
 
 func NewDB(dir, cypher string) (*DB, error) {
@@ -37,8 +38,14 @@ func MustNewDB(dir, cypher string) *DB {
 	return db
 }
 
+func (d *DB) SetLog(b bool) {
+	d.log = b
+}
+
 func (d *DB) SetVar(k, v string) {
-	fmt.Println("setvar ", k, v)
+	if d.log {
+		fmt.Println("setVar", k, v)
+	}
 	path := d.dir + k
 	fileToolkit.TruncateFile(path)
 	f, e := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)

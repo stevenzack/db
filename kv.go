@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/StevenZack/livedata"
@@ -14,7 +13,6 @@ func (db *DB) String(k, def string) *livedata.LiveDataString {
 	}
 	l := livedata.NewLiveDataString(v)
 	l.ObserveForever(func(s string) {
-		fmt.Println("onChange", s)
 		if db.GetVar(k) == s {
 			return
 		}
