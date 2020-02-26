@@ -42,6 +42,10 @@ func (d *DB) SetLog(b bool) {
 	d.log = b
 }
 
+func (d *DB) DisableLog() {
+	d.log = false
+}
+
 func (d *DB) SetVar(k, v string) {
 	if d.log {
 		fmt.Println("setVar", k, v)
