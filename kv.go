@@ -1,12 +1,33 @@
 package db
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
+
+	"github.com/StevenZack/tools/strToolkit"
 
 	"github.com/StevenZack/livedata"
 )
 
+func (db *DB) List(k string, def []interface{}) *livedata.List {
+	vs := db.GetVar(k)
+	l := []interface{}{}
+	if vs == "" {
+		l = def
+	} else {
+		e := json.Unmarshal([]byte(vs), &l)
+		if e != nil {
+			db.SetVar(k, strToolkit.JsonArray(def))
+			l = def
+		}
+	}
+	ld := livedata.NewList(l)
+	ld.ObserveForever(func(list []interface{}) {
+		db.SetVar(k, strToolkit.JsonArray(list))
+	})
+	return ld
+}
 func (db *DB) String(k, def string) *livedata.String {
 	v := db.GetVar(k)
 	if v == "" {
