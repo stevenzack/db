@@ -73,7 +73,11 @@ func (d *DB) GetVar(k string) string {
 }
 
 func (d *DB) SetSecret(k, v string) {
-	b := cryptoToolkit.EncryptStr(v, d.cypher)
+	b, e := cryptoToolkit.EncryptAES([]byte(v), []byte(d.cypher))
+	if e != nil {
+		log.Println(e)
+		return
+	}
 	d.SetVar(k, string(b))
 }
 
@@ -82,11 +86,11 @@ func (d *DB) GetSecret(k string) string {
 	if enc == "" {
 		return ""
 	}
-	dec, e := cryptoToolkit.DecryptStr(enc, d.cypher)
+	dec, e := cryptoToolkit.DecryptAES([]byte(enc), []byte(d.cypher))
 	if e != nil {
 		fmt.Println("decrypt str error :", e)
 		d.SetVar(k, "")
 		return ""
 	}
-	return dec
+	return string(dec)
 }
