@@ -27,7 +27,7 @@ func (db *DB) StringSecret(k, def string) *livedata.String {
 	return l
 }
 
-func (db *DB) IntSecret(k string, def int64) *livedata.Int64 {
+func (db *DB) Int64Secret(k string, def int64) *livedata.Int64 {
 	is := db.GetSecret(k)
 	var i int64
 	if is == "" {

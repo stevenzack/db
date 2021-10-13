@@ -3,7 +3,7 @@ module github.com/StevenZack/db
 go 1.17
 
 require (
-	github.com/StevenZack/livedata v1.1.0
+	github.com/StevenZack/livedata v1.1.1
 	github.com/StevenZack/tools v1.9.4
 )
 
