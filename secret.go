@@ -27,25 +27,25 @@ func (db *DB) StringSecret(k, def string) *livedata.String {
 	return l
 }
 
-func (db *DB) IntSecret(k string, def int) *livedata.Int {
+func (db *DB) IntSecret(k string, def int64) *livedata.Int64 {
 	is := db.GetSecret(k)
-	i := 0
+	var i int64
 	if is == "" {
 		i = def
 	} else {
 		var e error
-		i, e = strconv.Atoi(is)
+		i, e = strconv.ParseInt(is, 10, 64)
 		if e != nil {
-			db.SetSecret(k, strconv.Itoa(def))
+			db.SetSecret(k, strconv.FormatInt(def, 10))
 			i = def
 		}
 	}
-	l := livedata.NewInt(i)
-	l.ObserveForever(func(v int) {
-		if strconv.Itoa(v) == db.GetSecret(k) {
+	l := livedata.NewInt64(i)
+	l.ObserveForever(func(v int64) {
+		if strconv.FormatInt(v, 10) == db.GetSecret(k) {
 			return
 		}
-		db.SetSecret(k, strconv.FormatInt(int64(v), 10))
+		db.SetSecret(k, strconv.FormatInt(v, 10))
 	})
 	return l
 }

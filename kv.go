@@ -1,33 +1,12 @@
 package db
 
 import (
-	"encoding/json"
 	"strconv"
 	"time"
-
-	"github.com/StevenZack/tools/strToolkit"
 
 	"github.com/StevenZack/livedata"
 )
 
-func (db *DB) List(k string, def []interface{}) *livedata.List {
-	vs := db.GetVar(k)
-	l := []interface{}{}
-	if vs == "" {
-		l = def
-	} else {
-		e := json.Unmarshal([]byte(vs), &l)
-		if e != nil {
-			db.SetVar(k, strToolkit.JsonArray(def))
-			l = def
-		}
-	}
-	ld := livedata.NewList(l)
-	ld.ObserveForever(func(list []interface{}) {
-		db.SetVar(k, strToolkit.JsonArray(list))
-	})
-	return ld
-}
 func (db *DB) String(k, def string) *livedata.String {
 	v := db.GetVar(k)
 	if v == "" {
@@ -43,22 +22,46 @@ func (db *DB) String(k, def string) *livedata.String {
 	return l
 }
 
-func (db *DB) Int(k string, def int) *livedata.Int {
+func (db *DB) Int32(k string, def int32) *livedata.Int32 {
 	is := db.GetVar(k)
-	i := 0
+	var i int32
+	if is == "" {
+		i = def
+	} else {
+		i2, e := strconv.ParseInt(is, 10, 64)
+		if e != nil {
+			db.SetVar(k, strconv.FormatInt(int64(def), 10))
+			i = def
+		} else {
+			i = int32(i2)
+		}
+	}
+	l := livedata.NewInt32(i)
+	l.ObserveForever(func(v int32) {
+		if strconv.FormatInt(int64(v), 10) == db.GetVar(k) {
+			return
+		}
+		db.SetVar(k, strconv.FormatInt(int64(v), 10))
+	})
+	return l
+}
+
+func (db *DB) Int64(k string, def int64) *livedata.Int64 {
+	is := db.GetVar(k)
+	var i int64
 	if is == "" {
 		i = def
 	} else {
 		var e error
-		i, e = strconv.Atoi(is)
+		i, e = strconv.ParseInt(is, 10, 64)
 		if e != nil {
-			db.SetVar(k, strconv.Itoa(def))
+			db.SetVar(k, strconv.FormatInt(def, 10))
 			i = def
 		}
 	}
-	l := livedata.NewInt(i)
-	l.ObserveForever(func(v int) {
-		if strconv.Itoa(v) == db.GetVar(k) {
+	l := livedata.NewInt64(i)
+	l.ObserveForever(func(v int64) {
+		if strconv.FormatInt(v, 10) == db.GetVar(k) {
 			return
 		}
 		db.SetVar(k, strconv.FormatInt(int64(v), 10))
